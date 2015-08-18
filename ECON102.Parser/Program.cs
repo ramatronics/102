@@ -1,15 +1,18 @@
-﻿using System.Collections.Generic;
-using System.Text;
+﻿using ECON102.Parser.Extract;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace ECON102.Parser
 {
+    //Have to clean this up later, it's pretty messy... ain't nobody got time for dat during exams tho
     internal class Program
     {
-        static string WORK_DIR = Path.Combine(Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.Parent.FullName, "data");
-        static string DELTA_BASE = Path.Combine(WORK_DIR, @"delta");
-        static string SOURCE_BASE = Path.Combine(WORK_DIR, @"source");
-        static string OUT_FOLDER = Path.Combine(WORK_DIR, @"output");
+        private static string WORK_DIR = Path.Combine(Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.Parent.FullName, "data");
+        private static string DELTA_BASE = Path.Combine(WORK_DIR, @"delta");
+        private static string SOURCE_BASE = Path.Combine(WORK_DIR, @"source");
+        private static string OUT_FOLDER = Path.Combine(WORK_DIR, @"output");
 
         private static void Main(string[] args)
         {
@@ -36,17 +39,17 @@ namespace ECON102.Parser
             int practiceQCount = 0;
             int reusedQCount = 0;
             int totalQCount = 0;
-            
+
             //Hardcoded params for now
             string examQDelta = Path.Combine(DELTA_BASE, "exam");
             string[] examQFiles = new string[] { "27,28,29,30", "s1", "s2", "ss1", "ss2" };
-            int[] examQFileStartPage = new int[] { 1, 2, 2, 1, 1  };
+            int[] examQFileStartPage = new int[] { 1, 2, 2, 1, 1 };
             int[] examQFileEndPage = new int[] { 15, 14, 12, 10, 14 };
 
             Dictionary<string, IList<Question>> usedQs = new Dictionary<string, IList<Question>>();
             for (int i = 0; i < examQFiles.Length; i++)
             {
-                SampleExamFileExtract extract = new SampleExamFileExtract(BuildFileName_PDF(examQDelta, examQFiles[i]) , examQFileStartPage[i], examQFileEndPage[i]);
+                ExamFileExtract extract = new ExamFileExtract(BuildFileName_PDF(examQDelta, examQFiles[i]), examQFileStartPage[i], examQFileEndPage[i]);
                 IList<Question> qs = extract.GetQuestions();
 
                 usedQs[examQFiles[i]] = qs;
@@ -55,13 +58,13 @@ namespace ECON102.Parser
 
             //Hardcoded params for now
             string practiceQDelta = Path.Combine(DELTA_BASE, "practice");
-            string[] practiceQFiles = new string[] { "1,2", "20,21", "23", "24", "25", "26" };
-            int[] practiceQFileStartPage = new int[] { 1, 1, 1, 1, 1, 1 };
-            int[] practiceQFileEndPage = new int[] { 11, 8, 4, 4, 4, 5 };
+            string[] practiceQFiles = new string[] { "1,2", "20,21", "23", "24", "25", "26", "27,28" };
+            int[] practiceQFileStartPage = new int[] { 1, 1, 1, 1, 1, 1, 1 };
+            int[] practiceQFileEndPage = new int[] { 11, 8, 4, 4, 4, 5, 13 };
 
             for (int i = 0; i < practiceQFiles.Length; i++)
             {
-                SampleExamFileExtract extract = new SampleExamFileExtract(BuildFileName_PDF(practiceQDelta, practiceQFiles[i]), practiceQFileStartPage[i], practiceQFileEndPage[i]);
+                ExamFileExtract extract = new ExamFileExtract(BuildFileName_PDF(practiceQDelta, practiceQFiles[i]), practiceQFileStartPage[i], practiceQFileEndPage[i]);
                 IList<Question> qs = extract.GetQuestions();
 
                 if (usedQs.ContainsKey(practiceQFiles[i]) == false)
@@ -69,7 +72,7 @@ namespace ECON102.Parser
 
                 practiceQCount += qs.Count;
             }
-            
+
             StringBuilder unusedQuestions = new StringBuilder();
             foreach (var key in usedQs.Keys)
             {
@@ -118,13 +121,19 @@ namespace ECON102.Parser
                 }
             }
 
+            Dictionary<int, Tuple<int, int>> qCount = new Dictionary<int, Tuple<int, int>>();
+
             StringBuilder deltaResults = new StringBuilder();
             foreach (var sKey in sectorToQuestions.Keys)
             {
                 deltaResults.AppendLine("================" + sKey + "================");
 
+                int sVal = 0;
+                int sUsed = 0;
                 foreach (var questionSet in sectorToQuestions[sKey])
                 {
+                    sVal += questionSet.Questions.Count;
+
                     string txtLine = "Chapter " + questionSet.ChapterId + ": ";
 
                     for (int i = 0; i < questionSet.Questions.Count; i++)
@@ -132,12 +141,14 @@ namespace ECON102.Parser
                         if (questionSet.Questions[i].Used)
                         {
                             txtLine += questionSet.Questions[i].QuestionNumber.ToString() + ",";
+                            sUsed++;
                         }
                     }
 
                     totalQCount += questionSet.Questions.Count;
                     deltaResults.AppendLine(txtLine);
                 }
+                qCount[sKey] = new Tuple<int, int>(sVal, sUsed);
 
                 deltaResults.AppendLine("=============================================");
             }

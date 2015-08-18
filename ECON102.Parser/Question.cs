@@ -1,18 +1,17 @@
-﻿using System;
+﻿using ECON102.Parser.Extract;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECON102.Parser
 {
     public class QuestionSet
     {
         public int ChapterId { get; private set; }
+
         public string ChapterName { get; private set; }
+
         public IList<Question> Questions { get; private set; }
 
-        public QuestionSet(SourceFileExtract srcFiles_, int chapterId)
+        public QuestionSet(BaseFileExtract srcFiles_, int chapterId)
         {
             Questions = srcFiles_.GetQuestions();
             ChapterId = chapterId;
