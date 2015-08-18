@@ -16,6 +16,9 @@ namespace ECON102.Parser
 
         private static void Main(string[] args)
         {
+
+            //Extracting questions from pdf files (Exams & Practice PDFs)
+            /******************************************************************************************/
             Dictionary<int, List<QuestionSet>> sectorToQuestions = new Dictionary<int, List<QuestionSet>>();
 
             sectorToQuestions[1] = new List<QuestionSet>();
@@ -72,7 +75,9 @@ namespace ECON102.Parser
 
                 practiceQCount += qs.Count;
             }
+            /******************************************************************************************/
 
+            //Comparing questions to see which ones haven't been used in exams yet..... O(n^5) lol
             StringBuilder unusedQuestions = new StringBuilder();
             foreach (var key in usedQs.Keys)
             {
@@ -80,9 +85,8 @@ namespace ECON102.Parser
                 {
                     if (string.IsNullOrEmpty(question.QText.Replace(" ", "")))
                         continue;
-
-                    bool qFound = false;
-
+                    
+                    //Remove question numbers from raw question string (helps with comparing later)
                     if (!string.IsNullOrEmpty(question.QText))
                     {
                         if (char.IsDigit(question.QText[0]))
@@ -92,6 +96,9 @@ namespace ECON102.Parser
                             question.QText = question.QText.Remove(0, 1);
                     }
 
+
+                    //Compare with our library of questions
+                    bool qFound = false;
                     foreach (var sKey in sectorToQuestions.Keys)
                     {
                         foreach (var questionSet in sectorToQuestions[sKey])
@@ -100,6 +107,7 @@ namespace ECON102.Parser
                             {
                                 if (!string.IsNullOrEmpty(questionSet.Questions[i].QText) && !string.IsNullOrEmpty(question.QText.ToLower()))
                                 {
+                                    //Prepare strings to be compared
                                     string repoQ = questionSet.Questions[i].QText.ToLower().Replace(" ", "");
                                     string usedQ = question.QText.ToLower().Replace(" ", "");
 
@@ -114,16 +122,16 @@ namespace ECON102.Parser
                         }
                     }
 
+                    //If we still haven't found the question, add it to the unused Q set
                     if (!qFound)
-                    {
                         unusedQuestions.AppendLine(question.QText);
-                    }
                 }
             }
 
+            //Outputting the analysis to help know which questions to study dawg
             Dictionary<int, Tuple<int, int>> qCount = new Dictionary<int, Tuple<int, int>>();
-
             StringBuilder deltaResults = new StringBuilder();
+       
             foreach (var sKey in sectorToQuestions.Keys)
             {
                 deltaResults.AppendLine("================" + sKey + "================");
